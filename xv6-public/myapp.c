@@ -6,7 +6,6 @@ int
 main(int argc, char *argv[])
 {
 	char *buf = argv[1];
-    	strcmp(buf, "buf");
 
 	int ret_val;
 	ret_val = myfunction(buf);
