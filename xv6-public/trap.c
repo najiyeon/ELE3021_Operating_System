@@ -23,6 +23,11 @@ tvinit(void)
     SETGATE(idt[i], 0, SEG_KCODE<<3, vectors[i], 0);
   SETGATE(idt[T_SYSCALL], 1, SEG_KCODE<<3, vectors[T_SYSCALL], DPL_USER);
 
+  SETGATE(idt[T_USERCALL], 1, SEG_KCODE<<3, vectors[T_USERCALL], DPL_USER); // 128 interrupt
+  SETGATE(idt[T_LOCK], 1, SEG_KCODE<<3, vectors[T_USERCALL], DPL_USER); // 129 interrupt
+  SETGATE(idt[T_UNLOCK], 1, SEG_KCODE<<3, vectors[T_USERCALL], DPL_USER); // 130 interrupt
+
+
   initlock(&tickslock, "time");
 }
 
@@ -51,6 +56,12 @@ trap(struct trapframe *tf)
     if(cpuid() == 0){
       acquire(&tickslock);
       ticks++;
+      if(ticks >= 100){
+        // Calls priorityBoosting() whenever the global tick reaches 100 ticks
+        priorityBoosting();
+        ticks = 0;
+        //cprintf("priority boosting done!\ns");
+      }
       wakeup(&ticks);
       release(&tickslock);
     }
@@ -76,6 +87,18 @@ trap(struct trapframe *tf)
     cprintf("cpu%d: spurious interrupt at %x:%x\n",
             cpuid(), tf->cs, tf->eip);
     lapiceoi();
+    break;
+  case T_USERCALL: //128 interrupt
+    mycall();
+    exit();
+    break;
+  case T_LOCK:
+    schedulerLock(2021038122);
+    exit();
+    break;
+  case T_UNLOCK:
+    schedulerUnlock(2021038122);
+    exit();
     break;
 
   //PAGEBREAK: 13

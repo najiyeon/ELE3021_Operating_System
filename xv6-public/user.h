@@ -24,6 +24,12 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int myfunction(char*);
+void yield(void);
+int getLevel(void);
+void setPriority(int, int);
+void priorityBoosting(void);
+void schedulerLock(int);
+void schedulerUnlock(int);
 
 // ulib.c
 int stat(const char*, struct stat*);

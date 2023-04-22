@@ -120,6 +120,11 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
+int             getLevel(void);
+void            setPriority(int, int);
+void            priorityBoosting(void);
+void            schedulerLock(int);
+void            schedulerUnlock(int);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
@@ -188,6 +193,9 @@ void            clearpteu(pde_t *pgdir, char *uva);
 
 //prac_syscall.c
 int myfunction(char*);
+
+//prac2_mycall.c
+void mycall(void);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

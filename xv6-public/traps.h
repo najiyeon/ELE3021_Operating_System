@@ -27,6 +27,10 @@
 #define T_SYSCALL       64      // system call
 #define T_DEFAULT      500      // catchall
 
+#define T_USERCALL      128     // prac2_usercall, 128 interrupt
+#define T_LOCK          129     // call schedulerLock()
+#define T_UNLOCK        130     // call schedulerUnlock() 
+
 #define T_IRQ0          32      // IRQ 0 corresponds to int T_IRQ
 
 #define IRQ_TIMER        0

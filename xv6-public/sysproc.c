@@ -89,3 +89,57 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+void
+sys_yield(void)
+{
+  yield();
+}
+
+int
+sys_getLevel(void)
+{
+  return getLevel();
+}
+
+void
+sys_setPriority(void)
+{
+  int pid, priority;
+
+  if(argint(0, &pid) < 0 || argint(1, &priority) < 0){
+    return; //argument retrieve failed
+  }
+
+  setPriority(pid, priority); //call wrapped function
+}
+
+void
+sys_priorityBoosting(void)
+{
+  priorityBoosting();
+}
+
+void
+sys_schedulerLock(void)
+{
+  int password;
+
+  if(argint(0, &password) < 0){
+    return; //argument retrieve failed
+  }
+
+  schedulerLock(password);
+}
+
+void
+sys_schedulerUnlock(void)
+{
+  int password;
+
+  if(argint(0, &password) < 0){
+    return; //argument retrieve failed
+  }
+
+  schedulerUnlock(password);
+}
