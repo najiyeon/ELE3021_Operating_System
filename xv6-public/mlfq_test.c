@@ -17,7 +17,7 @@ int fork_children()
     if ((p = fork()) == 0)
     {
       me = i;
-      //sleep(5);
+      sleep(10);
       return getpid();
     }
   return parent;
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
       if(me > 3){
         me = 3;
       }
-      setPriority(pid, me);
+      setPriority(pid, (3-me));
     }
     printf(1, "Process %d\n", pid);
     for (i = 0; i < MAX_LEVEL; i++)

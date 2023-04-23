@@ -25,6 +25,7 @@ struct queue {
   struct proc *head;    // head pointer of the queue
   struct proc *tail;    // tail pointer of the queue
   int time_quantum;     // time quantum value of the queue
+	int level;            // queue level
 };
 
 struct queue L0;   // L0 queue
@@ -33,6 +34,9 @@ struct queue L2;   // L3 queue
 
 // Enqueue a process to the tail of the queue
 void enqueue(struct queue *q, struct proc *p) {
+  if(p->queueLevel != -1){
+    return;
+  }
   acquire(&q->lock);
   p->next = 0; // set the next pointer of the process to null
   if(q->head == 0) { // if the queue is empty
@@ -41,11 +45,15 @@ void enqueue(struct queue *q, struct proc *p) {
     q->tail->next = p; // set the next pointer of the tail process to the process
     q->tail = p; // set the tail pointer to the process
   }
+  p->queueLevel = q->level;
   release(&q->lock);
 }
 
 // Dequeue a process from the queue
 void dequeue(struct queue *q, struct proc *p) {
+  if(q->level != p->queueLevel){
+    return;
+  }
   acquire(&q->lock);
   if(q->head == p){ // if the process to be dequeued is at the head of the queue
     q->head = p->next; // move the head pointer to the next process
@@ -62,6 +70,7 @@ void dequeue(struct queue *q, struct proc *p) {
       q->tail = prev_p; // move the tail pointer to the previous process
     p->next = 0; // set the next pointer of the dequeued process to NULL
   }
+  p->queueLevel = -1;
   release(&q->lock);
 }
 
@@ -135,9 +144,9 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
 
-  p->queueLevel = 0; // set the queue level to 0
-  p->timeQuantum = 0; // initialize the time quantum to 0
-  p->priority = 3; // set the priority to 3
+	p->queueLevel = -1; // initialize the queue level to -1
+	p->timeQuantum = 0; // initialize the time quantum to 0
+	p->priority = 3; // set the priority to 3
 
   enqueue(&L0, p);
 
@@ -378,7 +387,10 @@ scheduler(void)
   struct proc *next_p;
   struct cpu *c = mycpu();
   c->proc = 0;
-  
+
+  L0.level = 0;
+  L1.level = 1;
+  L2.level = 2;
   // Set the time quantum of the queue
   L0.time_quantum = 4;
   L1.time_quantum = 6;
@@ -391,8 +403,6 @@ scheduler(void)
 
     acquire(&ptable.lock);
 
-    //cprintf("this is start\n");
-
     // If a process with scheduler_locked ==1 exists
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
       if(p->scheduler_locked == 1 && p->pid > 0) {
@@ -401,35 +411,25 @@ scheduler(void)
           if(p->pid < 1 || p->scheduler_locked != 1) {
             goto mlfq;
           }
-          // Switch to chosen process.  It is the process's job
-          // to release ptable.lock and then reacquire it
-          // before jumping back to us.
+
           c->proc = p;
           switchuvm(p);
           p->state = RUNNING;
-          
           swtch(&(c->scheduler), p->context);
           switchkvm();
 
-          // Process is done running for now.
-          // It should have changed its p->state before coming back.
           c->proc = 0;
         }
       } 		
 	  }
 
     mlfq:
-    // Check if a process exists in the L0 queue
     if(L0.head != 0){ //scheduling L0 queue
       for(p = L0.head; p != 0; p = next_p){
+        next_p = p->next;
         if(p->state != RUNNABLE || p->pid <= 0){
-          next_p = p->next;
-          //cprintf("L0: not runnable\n");
           continue;
         }
-        next_p = p->next;
-        //cprintf("L0 scheduling!\n");
-
         // Run the process
         c->proc = p;
         switchuvm(p);
@@ -438,48 +438,30 @@ scheduler(void)
         swtch(&(c->scheduler), p->context);
         switchkvm();
         c->proc = 0;
-        //cprintf("L0 process: scheduling done!\n");
-
-        // If the process finished, remove it from L0
-        if (p->state == ZOMBIE){
-          //cprintf("remove form queue\n");
-          dequeue(&L0, p);
-          goto end;
+      
+        if (p->state == ZOMBIE){ // If the process finished
+          dequeue(&L0, p); //remove the process from L0
         }
-        // If process uses up its time quantum in L0, move it to L1
+        // If process uses up its time quantum in L0
         else if(p->timeQuantum >= L0.time_quantum){
-          //cprintf("use up timequantum\n");
           p->timeQuantum = 0;
-          p->queueLevel = 1;
-
-          // Remove from L0
-          dequeue(&L0, p);
+          dequeue(&L0, p); //remove the process from L0
           // Add process to L1 queue
           enqueue(&L1, p);
-
-          goto end;
         }
-        // Move process to end of L0 queue
         else{
-          //cprintf("move to end of queue\n");
-          dequeue(&L0, p);
+          dequeue(&L0, p); //remove the process from L0
           enqueue(&L0, p);
-          
-          goto end;
         }
+        goto end;
       }
     }
-    // Check if a process exists in the L1 queue
     if(L1.head != 0){ //scheduling L1 queue
       for(p = L1.head; p != 0; p = next_p){
+        next_p = p->next;
         if(p->state != RUNNABLE || p->pid <= 0){
-          next_p = p->next;
-          //cprintf("L1: not runnable\n");
           continue;
         }
-        next_p = p->next;
-        //cprintf("L1 scheduling!\n");
-
         // Run the process
         c->proc = p;
         switchuvm(p);
@@ -488,52 +470,30 @@ scheduler(void)
         swtch(&(c->scheduler), p->context);
         switchkvm();
         c->proc = 0;
-        //cprintf("L1 process: scheduling done!\n");
-
-        // Check if priority boosting has occured
-        if(p->queueLevel == 0){
-          goto end;
+      
+        if (p->state == ZOMBIE){ // If the process finished
+          dequeue(&L1, p); //remove the process from L1
         }
-        // If the process finished, remove it from L1
-        if (p->state == ZOMBIE){
-          //cprintf("remove form queue\n");
-          dequeue(&L1, p);
-          
-          goto end;
-        }
-        // If process uses up its time quantum in L1, move it to L2
+        // If process uses up its time quantum in L1
         else if(p->timeQuantum >= L1.time_quantum){
-          //cprintf("use up timequantum\n");
           p->timeQuantum = 0;
-          p->queueLevel = 2;
-
-          // Remove from L1
-          dequeue(&L1, p);
+          dequeue(&L1, p); //remove the process from L1
           // Add process to L2 queue
           enqueue(&L2, p);
-
-          goto end;
         }
-        // Move process to end of L1 queue
         else{
-          //cprintf("move to end of queue\n");
-          dequeue(&L1, p);
+          dequeue(&L1, p); //remove the process from L1
           enqueue(&L1, p);
-
-          goto end;
         }
+        goto end;
       }
     }
-    // Check if a process exists in the L2 queue
     if(L2.head != 0){ //scheduling L2 queue
       for(p = L2.head; p != 0; p = next_p){
+        next_p = p->next;
         if(p->state != RUNNABLE || p->pid <= 0){
-          next_p = p->next;
-          //cprintf("L2: not runnable\n");
           continue;
         }
-        next_p = p->next;
-        //cprintf("L2 scheduling!\n");
 
         // Find the process with the highest priority
         struct proc *max_p = p;
@@ -550,7 +510,6 @@ scheduler(void)
             fcfs = 1; // set flag if process with same priority is found
           }
         }
-
         // If multiple processes with same priority exist, run the first one that arrived
         if(fcfs){
           for(struct proc *temp = p; temp != 0; temp = temp->next){
@@ -563,6 +522,7 @@ scheduler(void)
 
         // Run the chosen process
         p = max_p;
+
         c->proc = p;
         switchuvm(p);
         p->state = RUNNING;
@@ -570,43 +530,19 @@ scheduler(void)
         swtch(&(c->scheduler), p->context);
         switchkvm();
         c->proc = 0;
-        //cprintf("L2 process: scheduling done!\n");
 
-        // Check if priority boosting has occured
-        if(p->queueLevel == 0){
-          goto end;
-        }
-        // If the process finished, remove it from L2
+        // If the process finished
         if (p->state == ZOMBIE){
-          //cprintf("remove form queue\n");
-          dequeue(&L2, p);
-          
-          goto end;
+          dequeue(&L2, p); // remove the process from L2
         }
-        // If process uses up its time quantum in L2, 
-        // reduce priority and reset time quantum
-        // and move to end of queue
+        // If process uses up its time quantum in L2
         else if(p->timeQuantum >= L2.time_quantum){
-          //cprintf("use up timequantum\n");
           if(p->priority>0 && p->priority<=3){
-            p->priority--;
+            p->priority--; //reduce priority
           }
-          p->timeQuantum = 0;
-
-          // Move process to end of L2 queue
-          dequeue(&L2, p);
-          enqueue(&L2, p);
-
-          goto end;
+          p->timeQuantum = 0; //reset time quantum
         }
-        else{
-          //cprintf("move to end of queue\n");
-          // Move process to end of L2 queue
-          dequeue(&L2, p);
-          enqueue(&L2, p);
-
-          goto end;
-        }
+        goto end;
       }
     }
     end:
@@ -781,15 +717,14 @@ setPriority(int pid, int priority)
     return; //the priority argument is invalid
   }
 
-  struct proc *current_proc, *parent_proc; //declaring current and prarent process pointer
+  struct proc *p; //declaring current and prarent process pointer
 
   acquire(&ptable.lock); //acquires lock to ensure that it has exclusive access to the process table
-  parent_proc = myproc(); ////assigning parent_proc to the current process
 
   //loop through all the processes in the process table
-  for(current_proc = ptable.proc; current_proc < &ptable.proc[NPROC]; current_proc++){
-    if(current_proc->pid == pid && current_proc->parent == parent_proc){ //checks if the pid of the current process matches the input pid and if the parent of the current process matches the parent_proc
-      current_proc->priority = priority; //the priority of the process is set to the input priority
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->pid == pid){ //checks if the pid of the current process matches the input pid
+      p->priority = priority; //the priority of the process is set to the input priority
       release(&ptable.lock); //release lock
       return;
     }
@@ -806,33 +741,39 @@ priorityBoosting(void)
 
   acquire(&ptable.lock);
 
-  for(p = L0.head; p != 0; p = p->next){
-    p->priority = 3; //reset priority of all processes to 3
-    p->timeQuantum = 0; //the time quantum of all processes is initialized
+  // If the current process held the scheduler lock, it returns to the MLFQ scheduler
+  p = myproc();
+  if(p != 0 && p->scheduler_locked == 1){
+    p->scheduler_locked = 0;
+
+    // Move to the front of L0 queue
+    acquire(&L0.lock); // acquire the lock to access the L0 queue.
+    if(L0.head == 0) { // if the queue is empty
+      L0.head = L0.tail = p; // set both head and tail pointers to the process
+      p->next = 0; // set the next pointer of the process to null
+    } else { // if the queue is not empty
+      p->next = L0.head; // set the next pointer of the process to the current head of L0 queue,
+      L0.head = p; // and set the head pointer of L0 queue to the process.
+    }
+    p->queueLevel = 0;
+    release(&L0.lock);
   }
 
-  // Rebalance all processes in L1 to L0 queue
-  for(p = L1.head; p != 0; p = p->next){
-    p->queueLevel = 0; //all processes are rebalanced to the L0 queue
-    p->priority = 3; //reset priority of all processes to 3
-    p->timeQuantum = 0; //the time quantum of all processes is initialized
-
-    // Remove from L1
-    dequeue(&L1, p);
-    // Move to L0
-    enqueue(&L0, p);
-  }
-
-  // Rebalance all processes in L2 to L0 queue
-  for(p = L2.head; p != 0; p = p->next){
-    p->queueLevel = 0; //all processes are rebalanced to the L0 queue
-    p->priority = 3; //reset priority of all processes to 3
-    p->timeQuantum = 0; //the time quantum of all processes is initialized
-
-    // Remove from L2
-    dequeue(&L2, p);
-    // Move to L0
-    enqueue(&L0, p);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->queueLevel == 1){
+      // Remove from L1
+      dequeue(&L1, p);
+      // Move to L0
+      enqueue(&L0, p);
+    }
+    if(p->queueLevel == 2){
+      // Remove from L2
+      dequeue(&L2, p);
+      // Move to L0
+      enqueue(&L0, p);
+    }
+    p->priority = 3; // reset priority of all processes to 3
+    p->timeQuantum = 0; // the time quantum of all processes is initialized
   }
 
   release(&ptable.lock);
@@ -885,8 +826,28 @@ schedulerUnlock(int password)
   acquire(&ptable.lock);
   p->scheduler_locked = 0; //set scheduler lock to false
 
-  p->queueLevel = 0; //move to L0 queue
-  p->priority = 3; //set priority to 3
+  if(p->queueLevel == 0){
+    dequeue(&L0, p);
+  }
+  else if(p->queueLevel == 1){
+    dequeue(&L1, p);
+  }
+  else if(p->queueLevel == 2){
+    dequeue(&L2, p);
+  }
+  // Move to the front of L0 queue
+  acquire(&L0.lock); // acquire the lock to access the L0 queue.
+  if(L0.head == 0) { // if the queue is empty
+    L0.head = L0.tail = p; // set both head and tail pointers to the process
+    p->next = 0; // set the next pointer of the process to null
+  } else { // if the queue is not empty
+    p->next = L0.head; // set the next pointer of the process to the current head of L0 queue,
+    L0.head = p; // and set the head pointer of L0 queue to the process.
+  }
+  p->queueLevel = 0;
+  release(&L0.lock);
+  
+  p->priority = 3;
   p->timeQuantum = 0; //reset time quantum
   release(&ptable.lock);
 }
