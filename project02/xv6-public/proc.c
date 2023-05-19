@@ -532,3 +532,37 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+// Specifies the memory limit of the process corresponding to the pid in bytes
+int
+setmemorylimit(int pid, int limit)
+{
+  struct proc *p;
+  int pidCheck = 0;
+
+  // Check if the value of limit is an integer greater than or equal to 0
+  if(limit < 0){
+    cprintf("[setmemorylimit] limit is negative!\n");
+    return -1;
+  }
+
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->pid == pid){
+      if(limit < p->sz){
+        cprintf("[setmemorylimit] limit is smaller than the previously allocated memory!\n");
+        return -1;
+      }
+      p->memory_limit = limit;
+      pidCheck = 1; // pid exists
+    }
+  }
+  release(&ptable.lock);
+
+  if(pidCheck == 0){
+    cprintf("[setmemorylimit] pid doesn't exist!\n");
+    return -1;
+  }
+
+  return 0;
+}

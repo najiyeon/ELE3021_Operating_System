@@ -89,3 +89,15 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+int
+sys_exec2(void)
+{
+  
+}
+
+int
+sys_setmemorylimit(void)
+{
+
+}
