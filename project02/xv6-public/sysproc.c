@@ -93,11 +93,35 @@ sys_uptime(void)
 int
 sys_exec2(void)
 {
-  
+  struct proc *p = myproc();
+  char *path, *argv[MAXARG];
+  int i, stacksize;
+  uint uargv,uarg;
+
+  if(!p){
+    return -1;
+  }
+
+  if(argstr(0, &path) < 0 || argint(1, (int*)&uargv) <0 || argint(2, &stacksize) < 0){
+    return -1;
+  }
+
+  return exec2(path, argv, stacksize);
 }
 
 int
 sys_setmemorylimit(void)
 {
+  struct proc *p = myproc();
+  int pid, limit;
+  
+  if(!p){
+    return -1;
+  }
 
+  if(argint(0, &pid) < 0 || argint(1, &limit) < 0){
+    return -1;
+  }
+
+  return setmemorylimit(pid, limit);
 }
