@@ -213,6 +213,7 @@ exec2(char *path, char **argv, int stacksize)
   curproc->sz = sz;
   curproc->tf->eip = elf.entry;  // main
   curproc->tf->esp = sp;
+  curproc->stacksize = stacksize - 1; // store number of stack pages
   switchuvm(curproc);
   freevm(oldpgdir);
   return 0;

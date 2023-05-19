@@ -566,3 +566,9 @@ setmemorylimit(int pid, int limit)
 
   return 0;
 }
+
+void
+pmanager_list()
+{
+  
+}
