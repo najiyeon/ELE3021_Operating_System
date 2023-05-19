@@ -125,3 +125,9 @@ sys_setmemorylimit(void)
 
   return setmemorylimit(pid, limit);
 }
+
+void
+sys_pmanagerList()
+{
+  pmanager_list();
+}

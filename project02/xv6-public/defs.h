@@ -122,6 +122,7 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 int             setmemorylimit(int pid, int limit);
+void            pmanager_list();
 
 // swtch.S
 void            swtch(struct context**, struct context*);

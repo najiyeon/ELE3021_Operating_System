@@ -568,7 +568,18 @@ setmemorylimit(int pid, int limit)
 }
 
 void
-pmanager_list()
+pmanagerList()
 {
-  
+  cprintf("--------------------------------------------------------------------");
+  cprintf("|name            |pid        |stacksize  |sz         |limit      |\n");
+  struct proc *p;
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->state == RUNNABLE || p->state == RUNNING){
+        cprintf("|------------------------------------------------------------------|");
+        cprintf("|%s |%d |%d |%d |%d|\n", p->name, p->pid, p->stacksize, p->sz, p->memory_limit);
+    }
+  }
+  release(&ptable.lock);
+  cprintf("--------------------------------------------------------------------");
 }

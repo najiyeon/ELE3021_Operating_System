@@ -8,6 +8,7 @@
 int
 getcmd(char *buf, int nbuf)
 {
+  printf(2, "[pmanager] ");
   memset(buf, 0, nbuf);
   gets(buf, nbuf);
   if(buf[0] == 0) // EOF
@@ -34,7 +35,7 @@ main(void)
     // 'list' command
     if(buf[0] == 'l' && buf[1] == 'i' && buf[2] == 's' && buf[3] == 't' && (buf[4] == ' ' || buf[4] == '\n')){
       // Print the information of the currently runnig processes
-      pmanager_list();
+      pmanagerList();
       continue;
     }
     // 'kill' command
@@ -64,6 +65,7 @@ main(void)
     // 'execute' command
     else if(buf[0] == 'e' && buf[1] == 'x' && buf[2] == 'e' && buf[3] == 'c' && buf[4] == 'u' && buf[5] == 't' && buf[6] == 'e' && buf[7] == ' '){
         char *path;
+        char **argv;
         int stacksize;
 
         int i = 0;
@@ -82,8 +84,22 @@ main(void)
             i++;
         }
 
-        if(exec2(path, path, stacksize) == -1){
-            printf(1, "execute failed!\n");
+        argv[0] = path;
+        argv[1] = 0;
+
+        int pid = fork();
+        if(pid == 0){
+            pid = fork();
+            if(pid == 0){
+                exec2(path, argv, stacksize);
+            }
+            exit();
+        }
+        else if(pid > 0){
+            wait();
+        }
+        else{
+            printf(1, "fork failed!\n");
         }
         continue;
     }
