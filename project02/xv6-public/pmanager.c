@@ -10,7 +10,7 @@ int
 getcmd(char *buf, int nbuf)
 {
   printf(2, "pmanager > ");
-  memset(buf, 0, nbuf);
+  memset(buf, '0', nbuf);
   gets(buf, nbuf);
   if(buf[0] == 0) // EOF
     return -1;
@@ -44,15 +44,10 @@ main(void)
         // Kill the process with the cerresponding pid
         // Get pid
         int pid = 0;
-        int i = 0;
-        while(buf[5+i] != ' '){
-            int tmp = 10;
-            for(int j=0; j<i; j++){
-                tmp *= 10;
-            }
-            pid += atoi(&buf[5+i]) * tmp;
-            i++;
-        }
+
+        pid += atoi(&buf[5]);
+
+        printf(1, "pid: %d\n", pid);
 
         // Print success
         if(kill(pid) == -1){
@@ -66,24 +61,20 @@ main(void)
     // 'execute' command
     else if(buf[0] == 'e' && buf[1] == 'x' && buf[2] == 'e' && buf[3] == 'c' && buf[4] == 'u' && buf[5] == 't' && buf[6] == 'e' && buf[7] == ' '){
         char path[60];
+        memset(path, '\0', sizeof(path));
         char *argv[MAXARG];
         int stacksize = 0;
-
         int i = 0;
-        while(buf[8+i] != ' '){
+
+        while(buf[8+i] != ' ' && buf[8+i] != '\n'){
             path[i] = buf[8+i];
             i++;
         }
-        path[i] = '\0';
         i++;
-        while(buf[8+i] != ' '){
-            int tmp = 10;
-            for(int j=0; j<i; j++){
-                tmp *= 10;
-            }
-            stacksize += atoi(&buf[8+i]) * tmp;
-            i++;
-        }
+
+        stacksize += atoi(&buf[8+i]);
+
+        printf(1, "path: %s stacksize: %d\n", path, stacksize);
 
         argv[0] = path;
         argv[1] = 0;
@@ -108,25 +99,18 @@ main(void)
     else if(buf[0] == 'm' && buf[1] == 'e' && buf[2] == 'm' && buf[3] == 'l' && buf[4] == 'i' && buf[5] == 'm' && buf[6] == ' '){
         int pid = 0;
         int limit = 0;
-
         int i = 0;
-        while(buf[7+i] != ' '){
-            int tmp = 10;
-            for(int j=0; j<i; j++){
-                tmp *= 10;
-            }
-            pid += atoi(&buf[7+i]) * tmp;
+
+        pid += atoi(&buf[7]);
+
+        while(buf[7+i] != ' ' && buf[7+i] != '\n'){
             i++;
         }
         i++;
-        while(buf[7+i] != ' '){
-            int tmp = 10;
-            for(int j=0; j<i; j++){
-                tmp *= 10;
-            }
-            limit += atoi(&buf[7+i]) * tmp;
-            i++;
-        }
+
+        limit += atoi(&buf[7+i]);
+
+        printf(1, "pid: %d limit: %d\n", pid, limit);
 
         // Print success
         if(setmemorylimit(pid, limit) == -1){
