@@ -2,13 +2,14 @@
 #include "stat.h"
 #include "user.h"
 #include "fcntl.h"
+#include "param.h"
 
 #define BUFFERSIZE 1024
 
 int
 getcmd(char *buf, int nbuf)
 {
-  printf(2, "[pmanager] ");
+  printf(2, "pmanager > ");
   memset(buf, 0, nbuf);
   gets(buf, nbuf);
   if(buf[0] == 0) // EOF
@@ -49,7 +50,7 @@ main(void)
             for(int j=0; j<i; j++){
                 tmp *= 10;
             }
-            pid += atoi(buf[5+i]) * tmp;
+            pid += atoi(&buf[5+i]) * tmp;
             i++;
         }
 
@@ -64,9 +65,9 @@ main(void)
     }
     // 'execute' command
     else if(buf[0] == 'e' && buf[1] == 'x' && buf[2] == 'e' && buf[3] == 'c' && buf[4] == 'u' && buf[5] == 't' && buf[6] == 'e' && buf[7] == ' '){
-        char *path;
-        char **argv;
-        int stacksize;
+        char path[60];
+        char *argv[MAXARG];
+        int stacksize = 0;
 
         int i = 0;
         while(buf[8+i] != ' '){
@@ -80,7 +81,7 @@ main(void)
             for(int j=0; j<i; j++){
                 tmp *= 10;
             }
-            stacksize += atoi(buf[8+i]) * tmp;
+            stacksize += atoi(&buf[8+i]) * tmp;
             i++;
         }
 
@@ -114,7 +115,7 @@ main(void)
             for(int j=0; j<i; j++){
                 tmp *= 10;
             }
-            pid += atoi(buf[7+i]) * tmp;
+            pid += atoi(&buf[7+i]) * tmp;
             i++;
         }
         i++;
@@ -123,7 +124,7 @@ main(void)
             for(int j=0; j<i; j++){
                 tmp *= 10;
             }
-            limit += atoi(buf[7+i]) * tmp;
+            limit += atoi(&buf[7+i]) * tmp;
             i++;
         }
 

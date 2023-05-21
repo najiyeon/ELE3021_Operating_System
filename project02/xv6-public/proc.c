@@ -19,6 +19,7 @@ extern void forkret(void);
 extern void trapret(void);
 
 static void wakeup1(void *chan);
+void alignedPrint(int temp, int count);
 
 void
 pinit(void)
@@ -570,16 +571,42 @@ setmemorylimit(int pid, int limit)
 void
 pmanagerList()
 {
-  cprintf("--------------------------------------------------------------------");
-  cprintf("|name            |pid        |stacksize  |sz         |limit      |\n");
+  cprintf("-------------------------------------------------------------\n");
+  cprintf("|NAME           |PID       |STACKSIZE |MEMORY    |MEMLIM    |\n");
   struct proc *p;
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->state == RUNNABLE || p->state == RUNNING){
-        cprintf("|------------------------------------------------------------------|");
-        cprintf("|%s |%d |%d |%d |%d|\n", p->name, p->pid, p->stacksize, p->sz, p->memory_limit);
+      cprintf("-------------------------------------------------------------\n");
+
+      int padding = 15 - strlen(p->name);
+      cprintf("|%s", p->name);
+      while(padding > 0){
+        cprintf(" ");
+        padding--;
+      }
+
+      alignedPrint(p->pid, 9);
+      alignedPrint(p->stacksize, 9);
+      alignedPrint(p->sz, 9);
+      alignedPrint(p->memory_limit, 9);
+      cprintf("|\n");
     }
   }
   release(&ptable.lock);
-  cprintf("--------------------------------------------------------------------");
+  cprintf("-------------------------------------------------------------\n");
+}
+
+void
+alignedPrint(int temp, int count)
+{
+      cprintf("|%d", temp);
+      while(temp >= 10){
+        temp /= 10;
+        count--;
+      }
+      while(count > 0){
+        cprintf(" ");
+        count--;
+      }
 }
