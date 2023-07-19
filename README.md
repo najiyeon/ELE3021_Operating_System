@@ -21,7 +21,7 @@ _Hanyang University, Operating System, Spring 2023, by prof. Sooyong Kang_
 
 ## Project 03 : File system
 
-**project 3 code**
+[**project 3 code**](https://github.com/najiyeon/ELE3021_Operating_System/tree/master/project03/xv6-public)
 <br>
 [**project 3 wiki**](https://github.com/najiyeon/ELE3021_Operating_System/wiki/Project-03)
 
