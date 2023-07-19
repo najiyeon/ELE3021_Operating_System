@@ -26,6 +26,10 @@ int uptime(void);
 int exec2(char*, char**, int);
 int setmemorylimit(int, int);
 void pmanagerList(void);
+int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg);
+void thread_exit(void *retval);
+int thread_join(thread_t thread, void **retval);
+int exec_kill(int);
 
 // ulib.c
 int stat(const char*, struct stat*);

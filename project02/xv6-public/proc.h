@@ -50,7 +50,10 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   int stacksize;               // Number of stack pages
-  int memory_limit;            // Memory limit
+  int memlim;                  // Memory limit
+  thread_t tid;                // Thread id
+  struct proc *main;           // Main thread
+  void *retval;                // Return value for thread join
 };
 
 // Process memory is laid out contiguously, low addresses first:

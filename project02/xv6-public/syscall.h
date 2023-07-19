@@ -23,3 +23,7 @@
 #define SYS_exec2  22
 #define SYS_setmemorylimit  23
 #define SYS_pmanagerList    24
+#define SYS_thread_create   25
+#define SYS_thread_exit     26
+#define SYS_thread_join     27
+#define SYS_exec_kill       28

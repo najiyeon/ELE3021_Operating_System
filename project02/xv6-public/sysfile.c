@@ -423,10 +423,11 @@ int
 sys_exec2(void)
 {
   char *path, *argv[MAXARG];
+  int stacksize;
   int i;
   uint uargv, uarg;
 
-  if(argstr(0, &path) < 0 || argint(1, (int*)&uargv) < 0){
+  if(argstr(0, &path) < 0 || argint(1, (int*)&uargv) < 0 || argint(2, (int*)&stacksize) < 0){
     return -1;
   }
   memset(argv, 0, sizeof(argv));
@@ -442,7 +443,7 @@ sys_exec2(void)
     if(fetchstr(uarg, &argv[i]) < 0)
       return -1;
   }
-  return exec(path, argv);
+  return exec2(path, argv, stacksize);
 }
 
 int

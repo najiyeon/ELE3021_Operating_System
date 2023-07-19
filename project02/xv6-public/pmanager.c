@@ -47,7 +47,7 @@ main(void)
 
         pid += atoi(&buf[5]);
 
-        printf(1, "pid: %d\n", pid);
+        // printf(1, "pid: %d\n", pid);
 
         // Print success
         if(kill(pid) == -1){
@@ -74,7 +74,7 @@ main(void)
 
         stacksize += atoi(&buf[8+i]);
 
-        printf(1, "path: %s stacksize: %d\n", path, stacksize);
+        // printf(1, "path: %s stacksize: %d\n", path, stacksize);
 
         argv[0] = path;
         argv[1] = 0;
@@ -83,7 +83,9 @@ main(void)
         if(pid == 0){
             pid = fork();
             if(pid == 0){
-                exec2(path, argv, stacksize);
+                if(exec2(path, argv, stacksize) < 0){
+                  printf(1, "execute failed!\n");
+                }
             }
             exit();
         }
@@ -110,7 +112,7 @@ main(void)
 
         limit += atoi(&buf[7+i]);
 
-        printf(1, "pid: %d limit: %d\n", pid, limit);
+        // printf(1, "pid: %d limit: %d\n", pid, limit);
 
         // Print success
         if(setmemorylimit(pid, limit) == -1){

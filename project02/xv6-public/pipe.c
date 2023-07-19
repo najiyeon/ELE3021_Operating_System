@@ -79,7 +79,6 @@ int
 pipewrite(struct pipe *p, char *addr, int n)
 {
   int i;
-
   acquire(&p->lock);
   for(i = 0; i < n; i++){
     while(p->nwrite == p->nread + PIPESIZE){  //DOC: pipewrite-full

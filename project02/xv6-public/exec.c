@@ -19,6 +19,17 @@ exec(char *path, char **argv)
   pde_t *pgdir, *oldpgdir;
   struct proc *curproc = myproc();
 
+  if(curproc->tid > 0){
+    // Set the current thread to main thread
+    curproc->main->tid = curproc->tid;
+    curproc->tid = 0;
+    curproc->parent = curproc->main->parent;
+    curproc->main = 0;
+  }
+
+  // Kill all threads of the process except the current process(thread)
+  exec_kill(curproc->pid);
+
   begin_op();
 
   if((ip = namei(path)) == 0){
@@ -99,6 +110,7 @@ exec(char *path, char **argv)
   curproc->sz = sz;
   curproc->tf->eip = elf.entry;  // main
   curproc->tf->esp = sp;
+  curproc->stacksize = 1;
   switchuvm(curproc);
   freevm(oldpgdir);
   return 0;
@@ -124,6 +136,17 @@ exec2(char *path, char **argv, int stacksize)
   struct proghdr ph;
   pde_t *pgdir, *oldpgdir;
   struct proc *curproc = myproc();
+
+  if(curproc->tid > 0){
+    // Set the current thread to main thread
+    curproc->main->tid = curproc->tid;
+    curproc->tid = 0;
+    curproc->parent = curproc->main->parent;
+    curproc->main = 0;
+  }
+
+  // Kill all threads of the process except the current process(thread)
+  exec_kill(curproc->pid);
 
   begin_op();
 
