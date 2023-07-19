@@ -23,6 +23,6 @@ _Hanyang University, Operating System, Spring 2023, by prof. Sooyong Kang_
 
 **project 3 code**
 <br>
-**project 3 wiki**
+[**project 3 wiki**](https://github.com/najiyeon/ELE3021_Operating_System/wiki/Project-03)https://github.com/najiyeon/ELE3021_Operating_System/wiki/Project-03
 
 
